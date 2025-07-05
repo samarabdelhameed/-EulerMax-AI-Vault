@@ -1,90 +1,118 @@
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.30;
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.8.20;
 
 import "forge-std/Test.sol";
-import "src/EulerMaxVault.sol";
+import "../src/EulerMaxVault.sol";
 import "src/interfaces/IEulerLending.sol";
 import "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import "openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
 
 // Mock ERC20 for testing
-contract TestERC20 is ERC20 {
-    constructor() ERC20("Test Token", "TTK") {
-        _mint(msg.sender, 1_000_000 ether);
+contract MockERC20 is IERC20 {
+    string public name = "TestToken";
+    string public symbol = "TT";
+    uint8 public decimals = 18;
+    uint256 public override totalSupply;
+    mapping(address => uint256) public override balanceOf;
+    mapping(address => mapping(address => uint256)) public override allowance;
+
+    function transfer(
+        address recipient,
+        uint256 amount
+    ) public override returns (bool) {
+        balanceOf[msg.sender] -= amount;
+        balanceOf[recipient] += amount;
+        return true;
+    }
+
+    function approve(
+        address spender,
+        uint256 amount
+    ) public override returns (bool) {
+        allowance[msg.sender][spender] = amount;
+        return true;
+    }
+
+    function transferFrom(
+        address sender,
+        address recipient,
+        uint256 amount
+    ) public override returns (bool) {
+        allowance[sender][msg.sender] -= amount;
+        balanceOf[sender] -= amount;
+        balanceOf[recipient] += amount;
+        return true;
+    }
+
+    function mint(address to, uint256 amount) external {
+        balanceOf[to] += amount;
+        totalSupply += amount;
     }
 }
 
 // Mock IEulerLending
 contract MockEulerLending is IEulerLending {
-    uint256 public totalSupplied;
-    uint256 public apy;
+    mapping(address => uint256) public supplied;
+    uint256 public fakeAPY = 500; // 5.00%
 
-    function deposit(address, uint256 amount) external override {
-        totalSupplied += amount;
+    function deposit(address asset, uint256 amount) external override {
+        supplied[asset] += amount;
     }
 
-    function withdraw(address, uint256 amount) external override {
-        require(totalSupplied >= amount, "Not enough supplied");
-        totalSupplied -= amount;
+    function withdraw(address asset, uint256 amount) external override {
+        supplied[asset] -= amount;
     }
 
     function getAPY(address) external view override returns (uint256) {
-        return apy;
+        return fakeAPY;
     }
 
     function getTotalSupplied(
-        address
+        address asset
     ) external view override returns (uint256) {
-        return totalSupplied;
-    }
-
-    function setAPY(uint256 _apy) external {
-        apy = _apy;
+        return supplied[asset];
     }
 }
 
 contract EulerMaxVaultTest is Test {
-    EulerMaxVault public vault;
-    TestERC20 public token;
-    MockEulerLending public euler;
-    address public userA = address(0xA);
+    EulerMaxVault vault;
+    MockERC20 token;
+    MockEulerLending euler;
+
+    address user = address(0x1);
 
     function setUp() public {
-        token = new TestERC20();
+        token = new MockERC20();
         euler = new MockEulerLending();
-        vault = new EulerMaxVault(address(token), address(euler));
-        token.transfer(userA, 1000 ether);
-        vm.startPrank(userA);
+        vault = new EulerMaxVault(
+            address(token),
+            address(euler),
+            address(this)
+        );
+
+        token.mint(user, 1000 ether);
+        vm.prank(user);
         token.approve(address(vault), 1000 ether);
-        vm.stopPrank();
     }
 
     function testDepositAndWithdraw() public {
-        // User A deposits 100 tokens
-        vm.startPrank(userA);
+        vm.startPrank(user);
+
+        vault.deposit(500 ether);
+        assertEq(vault.balanceOf(user), 500 ether);
+
+        vault.withdraw(200 ether);
+        assertEq(vault.balanceOf(user), 300 ether);
+
+        vm.stopPrank();
+    }
+
+    function testAPYandSupply() public {
+        vm.startPrank(user);
         vault.deposit(100 ether);
         vm.stopPrank();
 
-        // Check shares and balance
-        uint256 shares = vault.userShares(userA);
-        assertGt(shares, 0);
-        assertEq(vault.totalShares(), shares);
-        assertEq(vault.balanceOf(userA), shares);
-
-        // User A withdraws 50 tokens
-        vm.startPrank(userA);
-        vault.withdraw(50 ether);
-        vm.stopPrank();
-
-        // Check shares and balance after withdrawal
-        uint256 sharesAfter = vault.userShares(userA);
-        assertLt(sharesAfter, shares);
-        assertEq(vault.totalShares(), sharesAfter);
-    }
-
-    function testAPYandTotalSupplied() public {
-        euler.setAPY(500); // 5% APY (example)
-        assertEq(vault.getVaultAPY(), 500);
-        assertEq(vault.getTotalSupplied(), 0);
+        assertEq(vault.vaultAPY(), 500);
+        assertEq(vault.totalSupplied(), 100 ether);
     }
 }
