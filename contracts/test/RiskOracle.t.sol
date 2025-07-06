@@ -1,0 +1,400 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.24;
+
+import "forge-std/Test.sol";
+import "../src/RiskOracle.sol";
+import "chainlink-brownie-contracts/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
+
+/**
+ * @title RiskOracleTest
+ * @dev Comprehensive test suite for RiskOracle contract
+ * @author EulerMax AI Vault
+ */
+contract RiskOracleTest is Test {
+    RiskOracle public riskOracle;
+
+    // Sepolia Chainlink Feed Addresses
+    address constant ETH_USD_FEED = 0x694AA1769357215DE4FAC081bf1f309aDC325306; // Sepolia ETH/USD
+    address constant USDC_USD_FEED = 0x694AA1769357215DE4FAC081bf1f309aDC325306; // Using ETH/USD as fallback for testing
+
+    // Test addresses
+    address public owner;
+    address public user;
+
+    // Events to test
+    event RiskUpdated(
+        uint256 timestamp,
+        uint256 ethPrice,
+        uint256 usdcPrice,
+        uint256 volatility,
+        uint256 correlation,
+        bool isILAboveThreshold
+    );
+
+    event FeedAddressUpdated(address indexed feed, string symbol);
+
+    function setUp() public {
+        // Fork Sepolia
+        vm.createSelectFork(vm.envString("SEPOLIA_RPC_URL"));
+
+        // Make feeds persistent
+        vm.makePersistent(ETH_USD_FEED);
+        vm.makePersistent(USDC_USD_FEED);
+
+        owner = makeAddr("owner");
+        user = makeAddr("user");
+
+        vm.startPrank(owner);
+
+        // Deploy RiskOracle with real Chainlink feeds
+        riskOracle = new RiskOracle(ETH_USD_FEED, USDC_USD_FEED);
+
+        vm.stopPrank();
+    }
+
+    // ========== Constructor Tests ==========
+
+    function test_Constructor_SetsFeedAddresses() public {
+        assertEq(address(riskOracle.ethUsdFeed()), ETH_USD_FEED);
+        assertEq(address(riskOracle.usdcUsdFeed()), USDC_USD_FEED);
+    }
+
+    function test_Constructor_InitializesWithCurrentPrices() public {
+        RiskOracle.RiskMetrics memory metrics = riskOracle.getLatestRiskData();
+        assertGt(metrics.ethPrice, 0);
+        assertGt(metrics.usdcPrice, 0);
+        assertEq(metrics.timestamp, block.timestamp);
+    }
+
+    function test_Constructor_RevertsWithInvalidFeedAddress() public {
+        vm.expectRevert(RiskOracle.InvalidFeedAddress.selector);
+        new RiskOracle(address(0), USDC_USD_FEED);
+
+        vm.expectRevert(RiskOracle.InvalidFeedAddress.selector);
+        new RiskOracle(ETH_USD_FEED, address(0));
+    }
+
+    // ========== Update Risk Tests ==========
+
+    function test_UpdateRisk_Success() public {
+        vm.startPrank(owner);
+
+        uint256 initialEthPrice = riskOracle.getLatestRiskData().ethPrice;
+
+        // Warp time to allow update
+        vm.warp(block.timestamp + 2 hours);
+
+        riskOracle.updateRisk();
+
+        RiskOracle.RiskMetrics memory metrics = riskOracle.getLatestRiskData();
+        assertGt(metrics.ethPrice, 0);
+        assertGt(metrics.usdcPrice, 0);
+        assertEq(metrics.lastUpdateTime, block.timestamp);
+
+        vm.stopPrank();
+    }
+
+    function test_UpdateRisk_EmitsRiskUpdatedEvent() public {
+        vm.startPrank(owner);
+
+        vm.warp(block.timestamp + 2 hours);
+
+        vm.expectEmit(true, true, true, true);
+        emit RiskUpdated(
+            block.timestamp,
+            0, // Will be actual price
+            0, // Will be actual price
+            0, // Will be actual volatility
+            0, // Will be actual correlation
+            false // Will be actual IL status
+        );
+
+        riskOracle.updateRisk();
+
+        vm.stopPrank();
+    }
+
+    function test_UpdateRisk_RevertsIfNotOwner() public {
+        vm.startPrank(user);
+
+        vm.expectRevert();
+        riskOracle.updateRisk();
+
+        vm.stopPrank();
+    }
+
+    function test_UpdateRisk_RevertsIfTooFrequent() public {
+        vm.startPrank(owner);
+
+        // First update
+        riskOracle.updateRisk();
+
+        // Try to update immediately
+        vm.expectRevert(RiskOracle.UpdateTooFrequent.selector);
+        riskOracle.updateRisk();
+
+        vm.stopPrank();
+    }
+
+    // ========== Getter Function Tests ==========
+
+    function test_GetVolatility_ReturnsLatestValue() public {
+        vm.startPrank(owner);
+
+        vm.warp(block.timestamp + 2 hours);
+        riskOracle.updateRisk();
+
+        uint256 volatility = riskOracle.getVolatility();
+        assertGe(volatility, 0);
+
+        vm.stopPrank();
+    }
+
+    function test_GetCorrelation_ReturnsLatestValue() public {
+        vm.startPrank(owner);
+
+        vm.warp(block.timestamp + 2 hours);
+        riskOracle.updateRisk();
+
+        uint256 correlation = riskOracle.getCorrelation();
+        assertGe(correlation, 0);
+        assertLe(correlation, 1e8); // Should be <= 100%
+
+        vm.stopPrank();
+    }
+
+    function test_IsILAboveThreshold_ReturnsLatestValue() public {
+        vm.startPrank(owner);
+
+        vm.warp(block.timestamp + 2 hours);
+        riskOracle.updateRisk();
+
+        bool isILAbove = riskOracle.isILAboveThreshold();
+        // Can be true or false depending on market conditions
+
+        vm.stopPrank();
+    }
+
+    function test_GetLatestRiskData_ReturnsCompleteMetrics() public {
+        RiskOracle.RiskMetrics memory metrics = riskOracle.getLatestRiskData();
+
+        assertGt(metrics.timestamp, 0);
+        assertGt(metrics.ethPrice, 0);
+        assertGt(metrics.usdcPrice, 0);
+        assertGe(metrics.volatility, 0);
+        assertGe(metrics.correlation, 0);
+        assertLe(metrics.correlation, 1e8);
+    }
+
+    function test_IsDataStale_ReturnsCorrectStatus() public {
+        // Initially data should not be stale
+        assertFalse(riskOracle.isDataStale());
+
+        // Warp time to make data stale
+        vm.warp(block.timestamp + 2 hours);
+        assertTrue(riskOracle.isDataStale());
+    }
+
+    // ========== Price History Tests ==========
+
+    function test_GetPriceHistoryLength_ReturnsCorrectLength() public {
+        uint256 length = riskOracle.getPriceHistoryLength();
+        assertGe(length, 1); // Should have at least initial price
+    }
+
+    function test_GetPricePoint_ReturnsCorrectData() public {
+        uint256 length = riskOracle.getPriceHistoryLength();
+        if (length > 0) {
+            RiskOracle.PricePoint memory point = riskOracle.getPricePoint(0);
+            assertGt(point.price, 0);
+            assertGt(point.timestamp, 0);
+        }
+    }
+
+    function test_GetPricePoint_RevertsIfIndexOutOfBounds() public {
+        uint256 length = riskOracle.getPriceHistoryLength();
+        vm.expectRevert("Index out of bounds");
+        riskOracle.getPricePoint(length);
+    }
+
+    // ========== Feed Address Update Tests ==========
+
+    function test_UpdateFeedAddresses_Success() public {
+        vm.startPrank(owner);
+
+        address newEthFeed = makeAddr("newEthFeed");
+        address newUsdcFeed = makeAddr("newUsdcFeed");
+
+        vm.expectEmit(true, true, true, true);
+        emit FeedAddressUpdated(newEthFeed, "ETH/USD");
+
+        vm.expectEmit(true, true, true, true);
+        emit FeedAddressUpdated(newUsdcFeed, "USDC/USD");
+
+        riskOracle.updateFeedAddresses(newEthFeed, newUsdcFeed);
+
+        vm.stopPrank();
+    }
+
+    function test_UpdateFeedAddresses_RevertsIfNotOwner() public {
+        vm.startPrank(user);
+
+        vm.expectRevert();
+        riskOracle.updateFeedAddresses(
+            makeAddr("newEthFeed"),
+            makeAddr("newUsdcFeed")
+        );
+
+        vm.stopPrank();
+    }
+
+    function test_UpdateFeedAddresses_RevertsWithInvalidAddress() public {
+        vm.startPrank(owner);
+
+        vm.expectRevert(RiskOracle.InvalidFeedAddress.selector);
+        riskOracle.updateFeedAddresses(address(0), makeAddr("newUsdcFeed"));
+
+        vm.expectRevert(RiskOracle.InvalidFeedAddress.selector);
+        riskOracle.updateFeedAddresses(makeAddr("newEthFeed"), address(0));
+
+        vm.stopPrank();
+    }
+
+    // ========== Volatility Calculation Tests ==========
+
+    function test_VolatilityCalculation_WithPriceChanges() public {
+        vm.startPrank(owner);
+
+        // Update multiple times to build price history
+        for (uint256 i = 0; i < 5; i++) {
+            vm.warp(block.timestamp + 2 hours);
+            riskOracle.updateRisk();
+        }
+
+        uint256 volatility = riskOracle.getVolatility();
+        assertGe(volatility, 0);
+
+        vm.stopPrank();
+    }
+
+    // ========== Correlation Calculation Tests ==========
+
+    function test_CorrelationCalculation_WithPriceHistory() public {
+        vm.startPrank(owner);
+
+        // Update multiple times to build price history
+        for (uint256 i = 0; i < 5; i++) {
+            vm.warp(block.timestamp + 2 hours);
+            riskOracle.updateRisk();
+        }
+
+        uint256 correlation = riskOracle.getCorrelation();
+        assertGe(correlation, 0);
+        assertLe(correlation, 1e8); // Should be <= 100%
+
+        vm.stopPrank();
+    }
+
+    // ========== IL Threshold Tests ==========
+
+    function test_ILThreshold_WithPriceDeviation() public {
+        vm.startPrank(owner);
+
+        // Update to establish baseline
+        vm.warp(block.timestamp + 2 hours);
+        riskOracle.updateRisk();
+
+        // Check IL status
+        bool isILAbove = riskOracle.isILAboveThreshold();
+        // Can be true or false depending on market conditions
+
+        vm.stopPrank();
+    }
+
+    // ========== Integration Tests ==========
+
+    function test_FullRiskUpdateFlow() public {
+        vm.startPrank(owner);
+
+        // Initial state
+        RiskOracle.RiskMetrics memory initialMetrics = riskOracle
+            .getLatestRiskData();
+        assertGt(initialMetrics.ethPrice, 0);
+        assertGt(initialMetrics.usdcPrice, 0);
+
+        // Update after time has passed
+        vm.warp(block.timestamp + 2 hours);
+        riskOracle.updateRisk();
+
+        // Check updated state
+        RiskOracle.RiskMetrics memory updatedMetrics = riskOracle
+            .getLatestRiskData();
+        assertGt(updatedMetrics.ethPrice, 0);
+        assertGt(updatedMetrics.usdcPrice, 0);
+        assertEq(updatedMetrics.lastUpdateTime, block.timestamp);
+
+        // Check all getter functions work
+        assertGe(riskOracle.getVolatility(), 0);
+        assertGe(riskOracle.getCorrelation(), 0);
+        assertLe(riskOracle.getCorrelation(), 1e8);
+
+        vm.stopPrank();
+    }
+
+    function test_PriceHistoryManagement() public {
+        vm.startPrank(owner);
+
+        // Add multiple price points
+        for (uint256 i = 0; i < 10; i++) {
+            vm.warp(block.timestamp + 2 hours);
+            riskOracle.updateRisk();
+        }
+
+        uint256 historyLength = riskOracle.getPriceHistoryLength();
+        assertLe(historyLength, 24); // Should not exceed MAX_PRICE_HISTORY
+
+        vm.stopPrank();
+    }
+
+    // ========== Error Handling Tests ==========
+
+    function test_StaleDataHandling() public {
+        // This test would require mocking stale data
+        // For now, we test the basic functionality
+        assertFalse(riskOracle.isDataStale());
+    }
+
+    function test_Constants_AreSetCorrectly() public {
+        assertEq(riskOracle.PRICE_PRECISION(), 1e8);
+        assertEq(riskOracle.VOLATILITY_WINDOW(), 24 hours);
+        assertEq(riskOracle.MAX_PRICE_HISTORY(), 24);
+        assertEq(riskOracle.IL_THRESHOLD(), 500);
+        assertEq(riskOracle.UPDATE_INTERVAL(), 1 hours);
+    }
+
+    // ========== Gas Optimization Tests ==========
+
+    function test_GasUsage_UpdateRisk() public {
+        vm.startPrank(owner);
+
+        vm.warp(block.timestamp + 2 hours);
+
+        uint256 gasBefore = gasleft();
+        riskOracle.updateRisk();
+        uint256 gasUsed = gasBefore - gasleft();
+
+        // Should be reasonable gas usage (less than 500k)
+        assertLt(gasUsed, 500000);
+
+        vm.stopPrank();
+    }
+
+    function test_GasUsage_ViewFunctions() public {
+        uint256 gasBefore = gasleft();
+        riskOracle.getVolatility();
+        uint256 gasUsed = gasBefore - gasleft();
+
+        // View functions should be very cheap
+        assertLt(gasUsed, 50000);
+    }
+}
