@@ -465,3 +465,7 @@ For technical support or questions about the enhanced Delta Neutral Strategy:
 - currentPosition كلها أصفار لأن لم يتم فتح أي مركز بعد.
 
 ---
+
+## 📽️ Project Presentation
+
+[🔗 View the EulerMax AI Vault Presentation on Canva](https://www.canva.com/design/DAGseiKn93o/RuKDxhpaLCKjqK8w4znunw/edit?utm_content=DAGseiKn93o&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton)

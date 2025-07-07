@@ -306,3 +306,11 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ---
 
 **Made with ❤️ by the EulerMax Team**
+
+---
+
+## 📽️ Project Presentation
+
+[🔗 View the EulerMax AI Vault Presentation on Canva](https://www.canva.com/design/DAGseiKn93o/RuKDxhpaLCKjqK8w4znunw/edit?utm_content=DAGseiKn93o&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton)
+
+---
