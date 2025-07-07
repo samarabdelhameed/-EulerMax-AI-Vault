@@ -1,14 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { toast, ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
-// import axios from 'axios'; // Uncomment if you want to use real backend
-
-// Modular sync function (can be connected to backend later)
-const syncPreferences = async (prefs: typeof defaultPrefs) => {
-  // await axios.post('/api/user/preferences', prefs);
-  // For now, just simulate a delay
-  return new Promise((resolve) => setTimeout(resolve, 300));
-};
+import axios from 'axios';
+import { useTranslation } from 'react-i18next';
+import '../i18n';
 
 const defaultPrefs = {
   portfolio: true,
@@ -34,11 +28,25 @@ const NOTIF_DESCRIPTIONS: Record<keyof typeof defaultPrefs, string> = {
 const NOTIF_KEYS = Object.keys(defaultPrefs) as (keyof typeof defaultPrefs)[];
 
 const NotificationsSettings: React.FC = () => {
-  // Load preferences from localStorage or use defaults
+  const { t } = useTranslation();
   const [prefs, setPrefs] = useState(() => {
     const saved = localStorage.getItem('notifications');
     return saved ? JSON.parse(saved) : defaultPrefs;
   });
+  const [loading, setLoading] = useState(true);
+
+  // Fetch preferences from backend on mount
+  useEffect(() => {
+    axios.get('/api/user/preferences')
+      .then(res => {
+        setPrefs(res.data);
+        localStorage.setItem('notifications', JSON.stringify(res.data));
+      })
+      .catch(() => {
+        toast.error(t('Failed to load preferences'), { position: 'bottom-right' });
+      })
+      .finally(() => setLoading(false));
+  }, [t]);
 
   // Persist to localStorage on change
   useEffect(() => {
@@ -50,10 +58,14 @@ const NotificationsSettings: React.FC = () => {
     const newPrefs = { ...prefs, [key]: !prefs[key] };
     setPrefs(newPrefs);
     toast.info(
-      `${NOTIF_LABELS[key]} turned ${newPrefs[key] ? 'on' : 'off'}`,
+      `${t(NOTIF_LABELS[key])} ${newPrefs[key] ? t('turned on') : t('turned off')}`,
       { position: 'bottom-right', autoClose: 2000 }
     );
-    await syncPreferences(newPrefs);
+    try {
+      await axios.post('/api/user/preferences', newPrefs);
+    } catch {
+      toast.error(t('Failed to save preferences'), { position: 'bottom-right' });
+    }
   };
 
   // Turn All On/Off logic
@@ -63,11 +75,19 @@ const NotificationsSettings: React.FC = () => {
     const newPrefs = NOTIF_KEYS.reduce((acc, key) => ({ ...acc, [key]: newValue }), {} as typeof prefs);
     setPrefs(newPrefs);
     toast.info(
-      `All notifications turned ${newValue ? 'on' : 'off'}`,
+      `${newValue ? t('All notifications turned on') : t('All notifications turned off')}`,
       { position: 'bottom-right', autoClose: 2000 }
     );
-    await syncPreferences(newPrefs);
+    try {
+      await axios.post('/api/user/preferences', newPrefs);
+    } catch {
+      toast.error(t('Failed to save preferences'), { position: 'bottom-right' });
+    }
   };
+
+  if (loading) {
+    return <div className="text-center text-gray-500 py-4">{t('Loading...')}</div>;
+  }
 
   return (
     <div className="space-y-4">
@@ -76,14 +96,14 @@ const NotificationsSettings: React.FC = () => {
           onClick={toggleAll}
           className="px-4 py-2 rounded-lg font-medium transition-colors bg-gray-200 text-gray-800 hover:bg-gray-300"
         >
-          {allOn ? 'Turn All Off' : 'Turn All On'}
+          {allOn ? t('Turn All Off') : t('Turn All On')}
         </button>
       </div>
       {NOTIF_KEYS.map((key) => (
         <div key={key} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
           <div>
-            <p className="font-medium text-gray-900">{NOTIF_LABELS[key]}</p>
-            <p className="text-sm text-gray-600">{NOTIF_DESCRIPTIONS[key]}</p>
+            <p className="font-medium text-gray-900">{t(NOTIF_LABELS[key])}</p>
+            <p className="text-sm text-gray-600">{t(NOTIF_DESCRIPTIONS[key])}</p>
           </div>
           <label className="relative inline-flex items-center cursor-pointer">
             <input

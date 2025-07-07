@@ -1,14 +1,12 @@
 import React, { useState } from 'react';
-import { Menu, X, Wallet, Settings, TrendingUp, Bot, Home, LogOut, Bell, History, HelpCircle, Moon, Sun } from 'lucide-react';
+import { Menu, X, Settings, TrendingUp, Bot, Home, Bell, History, HelpCircle, Moon, Sun } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import ConnectWalletButton from './ConnectWalletButton';
 
 interface NavbarProps {
   currentPage: string;
   onPageChange: (page: string) => void;
   isConnected: boolean;
-  onConnect: () => void;
-  onDisconnect: () => void;
-  address?: string;
   onShowNotifications?: () => void;
   darkMode?: boolean;
   onToggleDarkMode?: () => void;
@@ -18,9 +16,6 @@ const Navbar: React.FC<NavbarProps> = ({
   currentPage,
   onPageChange,
   isConnected,
-  onConnect,
-  onDisconnect,
-  address,
   onShowNotifications,
   darkMode = false,
   onToggleDarkMode
@@ -35,10 +30,6 @@ const Navbar: React.FC<NavbarProps> = ({
     { id: 'support', label: 'Support', icon: HelpCircle },
     { id: 'settings', label: 'Settings', icon: Settings },
   ];
-
-  const formatAddress = (addr: string) => {
-    return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
-  };
 
   return (
     <motion.nav 
@@ -106,7 +97,6 @@ const Navbar: React.FC<NavbarProps> = ({
                 {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
               </motion.button>
             )}
-            
             {/* Notifications */}
             {isConnected && onShowNotifications && (
               <motion.button
@@ -123,44 +113,8 @@ const Navbar: React.FC<NavbarProps> = ({
                 />
               </motion.button>
             )}
-
-            {isConnected ? (
-              <div className="flex items-center space-x-2">
-                <motion.div 
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  className="hidden sm:flex items-center space-x-2 bg-green-600/20 border border-green-500/30 px-3 py-1.5 rounded-lg"
-                >
-                  <motion.div 
-                    animate={{ scale: [1, 1.2, 1] }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                    className="w-2 h-2 bg-green-500 rounded-full"
-                  />
-                  <span className="text-sm font-medium text-green-400">
-                    {address ? formatAddress(address) : 'Connected'}
-                  </span>
-                </motion.div>
-                <motion.button
-                  whileHover={{ scale: 1.1, rotate: 90 }}
-                  whileTap={{ scale: 0.9 }}
-                  onClick={onDisconnect}
-                  className="p-2 text-gray-400 hover:text-red-400 transition-colors"
-                >
-                  <LogOut className="w-4 h-4" />
-                </motion.button>
-              </div>
-            ) : (
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={onConnect}
-                className="flex items-center space-x-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white px-4 py-2 rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-200"
-              >
-                <Wallet className="w-4 h-4" />
-                <span className="text-sm font-medium">Connect Wallet</span>
-              </motion.button>
-            )}
-
+            {/* Professional Connect Wallet Button */}
+            <ConnectWalletButton />
             {/* Mobile Menu Toggle */}
             <motion.button
               whileHover={{ scale: 1.1 }}
