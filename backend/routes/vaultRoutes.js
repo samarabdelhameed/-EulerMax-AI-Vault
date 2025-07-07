@@ -1,14 +1,16 @@
 const express = require('express');
 const router = express.Router();
-const { getVaultData, deposit, withdraw } = require('../controllers/vaultController');
+const vaultController = require('../controllers/vaultController');
 
-// GET /api/vault - Get vault data
-router.get('/', getVaultData);
+// قراءة بيانات الفولت
+router.get('/data', vaultController.getVaultData);
+// إيداع
+router.post('/deposit', vaultController.deposit);
+// سحب
+router.post('/withdraw', vaultController.withdraw);
+// قراءة رصيد المستخدم من العقد الذكي
+router.get('/onchain-balance/:walletAddress', vaultController.getOnchainBalance);
 
-// POST /api/vault/deposit - Deposit funds
-router.post('/deposit', deposit);
-
-// POST /api/vault/withdraw - Withdraw funds
-router.post('/withdraw', withdraw);
+// يمكنك إضافة المزيد من الراوتات هنا (CRUD, AI, إلخ)
 
 module.exports = router;

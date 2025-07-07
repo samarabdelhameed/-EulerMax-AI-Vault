@@ -1,24 +1,27 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const { getVaultData } = require('./controllers/vaultController');
+const bodyParser = require('body-parser');
+// const connectDB = require('./config/db'); // تم التعطيل مؤقتًا
+const vaultRoutes = require('./routes/vaultRoutes');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 
-// Middleware
+// Middlewares
 app.use(cors());
-app.use(express.json());
+app.use(bodyParser.json());
 
-// Routes
-app.get('/api/vault', getVaultData);
+// Connect to DB
+// connectDB(); // تم التعطيل مؤقتًا
+
+// API Routes
+app.use('/api/vault', vaultRoutes);
 
 // Health check
-app.get('/', (req, res) => {
-  res.json({ message: 'EulerMax AI Vault API is running!' });
-});
+app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📊 Vault API: http://localhost:${PORT}/api/vault`);
+  console.log(`🚀 Backend server running on http://localhost:${PORT}`);
 });

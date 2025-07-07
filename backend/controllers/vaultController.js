@@ -1,7 +1,19 @@
 require("dotenv").config();
-const { ethers, provider, signer } = require("../config/eth");
 const fs = require("fs");
 const path = require("path");
+const VaultUser = require('../models/VaultUser');
+const { ethers } = require('ethers');
+
+// إعداد مزود الشبكة (RPC)
+const provider = process.env.RPC_URL ? new ethers.JsonRpcProvider(process.env.RPC_URL) : null;
+let signer = null;
+if (process.env.PRIVATE_KEY && process.env.RPC_URL) {
+  try {
+    signer = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
+  } catch (e) {
+    signer = null;
+  }
+}
 
 // 🧠 تحميل ABI لعقد EulerMaxVault
 const vaultAbiPath = path.join(__dirname, "../../contracts/out/EulerMaxVault.sol/EulerMaxVault.json");
@@ -14,6 +26,7 @@ const VAULT_ADDRESS = "0x3C9c14a184946642Af10b09890A01fadbD874502";
 // 🧾 قراءة بيانات الفولت
 const getVaultData = async (req, res) => {
   try {
+    if (!provider) throw new Error("Provider not configured");
     const vault = new ethers.Contract(VAULT_ADDRESS, vaultAbi, provider);
     const totalShares = await vault.totalShares();
     const totalSupplied = await vault.totalSupplied();
@@ -41,10 +54,10 @@ const deposit = async (req, res) => {
     return res.status(400).json({ error: "❌ Amount is required" });
   }
 
-  if (!process.env.PRIVATE_KEY || process.env.PRIVATE_KEY.includes("ضع")) {
+  if (!signer) {
     return res.status(500).json({ 
-      error: "❌ Private key not set", 
-      message: "Please add your PRIVATE_KEY to .env file." 
+      error: "❌ Signer not set", 
+      message: "Please check your PRIVATE_KEY and RPC_URL in .env file." 
     });
   }
 
@@ -84,10 +97,10 @@ const withdraw = async (req, res) => {
     return res.status(400).json({ error: "❌ Shares amount is required" });
   }
 
-  if (!process.env.PRIVATE_KEY || process.env.PRIVATE_KEY.includes("ضع")) {
+  if (!signer) {
     return res.status(500).json({ 
-      error: "❌ Private key not set", 
-      message: "Please add your PRIVATE_KEY to .env file." 
+      error: "❌ Signer not set", 
+      message: "Please check your PRIVATE_KEY and RPC_URL in .env file." 
     });
   }
 
@@ -119,4 +132,24 @@ const withdraw = async (req, res) => {
   }
 };
 
-module.exports = { getVaultData, deposit, withdraw };
+// عنوان العقد الذكي وABI (ضع الـ ABI المناسب لعقدك)
+const VAULT_CONTRACT_ADDRESS = process.env.VAULT_CONTRACT_ADDRESS;
+const VAULT_ABI = [
+  // مثال: دالة قراءة الرصيد
+  "function balanceOf(address) view returns (uint256)"
+];
+
+// مثال: قراءة رصيد المستخدم من العقد الذكي
+const getOnchainBalance = async (req, res) => {
+  try {
+    if (!provider) throw new Error("Provider not configured");
+    const { walletAddress } = req.params;
+    const contract = new ethers.Contract(VAULT_CONTRACT_ADDRESS, VAULT_ABI, provider);
+    const balance = await contract.balanceOf(walletAddress);
+    res.json({ walletAddress, onchainBalance: balance.toString() });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+module.exports = { getVaultData, deposit, withdraw, getOnchainBalance };
