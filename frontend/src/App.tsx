@@ -1,5 +1,13 @@
 import React, { useState } from 'react';
 import { useEffect } from 'react';
+import {
+  getDefaultWallets,
+  RainbowKitProvider
+} from '@rainbow-me/rainbowkit';
+import { configureChains, createConfig, WagmiConfig } from 'wagmi';
+import { mainnet, sepolia } from 'wagmi/chains';
+import { publicProvider } from 'wagmi/providers/public';
+import '@rainbow-me/rainbowkit/styles.css';
 import Navbar from './components/Navbar';
 import Dashboard from './components/Dashboard';
 import VaultManager from './components/VaultManager';
@@ -10,6 +18,21 @@ import Support from './components/Support';
 import Onboarding from './components/Onboarding';
 import NotFound from './components/NotFound';
 import NotificationCenter from './components/NotificationCenter';
+
+const { chains, publicClient } = configureChains(
+  [mainnet, sepolia],
+  [publicProvider()]
+);
+const { connectors } = getDefaultWallets({
+  appName: 'EulerMax AI',
+  projectId: 'eulermax-ai',
+  chains
+});
+const wagmiConfig = createConfig({
+  autoConnect: true,
+  connectors,
+  publicClient
+});
 
 function App() {
   const [currentPage, setCurrentPage] = useState('dashboard');
@@ -179,29 +202,30 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900">
-      <Navbar
-        currentPage={currentPage}
-        onPageChange={setCurrentPage}
-        isConnected={isConnected}
-        onConnect={handleConnect}
-        onDisconnect={handleDisconnect}
-        address={address}
-        onShowNotifications={() => setShowNotifications(true)}
-        darkMode={darkMode}
-        onToggleDarkMode={handleToggleDarkMode}
-      />
-      
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 bg-gray-900">
-        {renderCurrentPage()}
-      </main>
-
-      {/* Notification Center */}
-      <NotificationCenter
-        isOpen={showNotifications}
-        onClose={() => setShowNotifications(false)}
-      />
-    </div>
+    <WagmiConfig config={wagmiConfig}>
+      <RainbowKitProvider chains={chains}>
+        <div className="min-h-screen bg-gray-900">
+          <Navbar
+            currentPage={currentPage}
+            onPageChange={setCurrentPage}
+            isConnected={isConnected}
+            onConnect={handleConnect}
+            onDisconnect={handleDisconnect}
+            address={address}
+            onShowNotifications={() => setShowNotifications(true)}
+            darkMode={darkMode}
+            onToggleDarkMode={handleToggleDarkMode}
+          />
+          <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 bg-gray-900">
+            {renderCurrentPage()}
+          </main>
+          <NotificationCenter
+            isOpen={showNotifications}
+            onClose={() => setShowNotifications(false)}
+          />
+        </div>
+      </RainbowKitProvider>
+    </WagmiConfig>
   );
 }
 
