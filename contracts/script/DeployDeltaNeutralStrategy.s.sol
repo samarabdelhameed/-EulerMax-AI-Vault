@@ -15,11 +15,7 @@ contract DeployDeltaNeutralStrategy is Script {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
 
         vm.startBroadcast(deployerPrivateKey);
-        DeltaNeutralStrategy strategy = new DeltaNeutralStrategy(
-            usdc,
-            weth,
-            aaveLendingPool
-        );
+        DeltaNeutralStrategy strategy = new DeltaNeutralStrategy(usdc, weth, aaveLendingPool);
         vm.stopBroadcast();
 
         console2.log("DeltaNeutralStrategy deployed at:", address(strategy));

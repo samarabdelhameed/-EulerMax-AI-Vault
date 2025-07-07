@@ -10,8 +10,7 @@ contract DeltaNeutralStrategyTest is Test {
     DeltaNeutralStrategy public strategy;
 
     // ============ Sepolia Testnet Addresses ============
-    address constant AAVE_LENDING_POOL =
-        0x4F3eAb9c71a4193E9057A2d8b76e36F64f86e7B7;
+    address constant AAVE_LENDING_POOL = 0x4F3eAb9c71a4193E9057A2d8b76e36F64f86e7B7;
     // Using USDC address that exists on Sepolia
     address constant USDC = 0xda9d4f9b69ac6C22e444eD9aF0CfC043b7a7f53f;
     address constant WETH = 0xc778417E063141139Fce010982780140Aa0cD5Ab;
@@ -27,9 +26,7 @@ contract DeltaNeutralStrategyTest is Test {
     // ============ Test Setup ============
     function setUp() public {
         // Fork Sepolia from Infura
-        vm.createSelectFork(
-            "https://sepolia.infura.io/v3/e909ef7e3aaa4a2cbb627fbee4ffd000"
-        );
+        vm.createSelectFork("https://sepolia.infura.io/v3/e909ef7e3aaa4a2cbb627fbee4ffd000");
 
         // Make contracts persistent for forked environment
         vm.makePersistent(USDC);
@@ -52,11 +49,7 @@ contract DeltaNeutralStrategyTest is Test {
         deal(USDC, user, amount);
 
         // Verify user received USDC
-        assertGe(
-            IERC20(USDC).balanceOf(user),
-            amount,
-            "User should receive USDC"
-        );
+        assertGe(IERC20(USDC).balanceOf(user), amount, "User should receive USDC");
     }
 
     function fundUserWithWETH(address user, uint256 amount) internal {
@@ -64,11 +57,7 @@ contract DeltaNeutralStrategyTest is Test {
         deal(WETH, user, amount);
 
         // Verify user received WETH
-        assertGe(
-            IERC20(WETH).balanceOf(user),
-            amount,
-            "User should receive WETH"
-        );
+        assertGe(IERC20(WETH).balanceOf(user), amount, "User should receive WETH");
     }
 
     // ============ Core Function Tests ============
@@ -90,13 +79,12 @@ contract DeltaNeutralStrategyTest is Test {
         vm.stopPrank();
 
         // Verify position is open
-        (, , , , bool isOpen, uint256 value) = strategy.getPositionDetails();
+        (,,,, bool isOpen, uint256 value) = strategy.getPositionDetails();
         assertTrue(isOpen, "Position should be open");
         assertGt(value, 0, "Position value should be greater than 0");
 
         // Verify position details
-        (uint256 collateral, uint256 borrowed, uint256 hedge, , , ) = strategy
-            .getPositionDetails();
+        (uint256 collateral, uint256 borrowed, uint256 hedge,,,) = strategy.getPositionDetails();
         assertEq(collateral, amount, "Collateral amount should match");
         assertEq(borrowed, amount * 3, "Borrowed amount should be 3x leverage");
         assertGt(hedge, 0, "Hedge amount should be greater than 0");
@@ -123,16 +111,12 @@ contract DeltaNeutralStrategyTest is Test {
         vm.stopPrank();
 
         // Verify position is closed
-        (, , , , bool isOpen, ) = strategy.getPositionDetails();
+        (,,,, bool isOpen,) = strategy.getPositionDetails();
         assertFalse(isOpen, "Position should be closed");
 
         // Verify user received funds back
         uint256 finalBalance = IERC20(USDC).balanceOf(USER1);
-        assertGe(
-            finalBalance,
-            initialBalance,
-            "User should receive funds back"
-        );
+        assertGe(finalBalance, initialBalance, "User should receive funds back");
     }
 
     function testRebalanceOnPriceShift() public {
@@ -160,11 +144,7 @@ contract DeltaNeutralStrategyTest is Test {
 
         // Verify rebalance time updated
         uint256 newRebalanceTime = strategy.getLastRebalanceTime();
-        assertGt(
-            newRebalanceTime,
-            initialRebalanceTime,
-            "Rebalance time should be updated"
-        );
+        assertGt(newRebalanceTime, initialRebalanceTime, "Rebalance time should be updated");
     }
 
     function testEmergencyWithdrawOnFork() public {
@@ -181,11 +161,7 @@ contract DeltaNeutralStrategyTest is Test {
 
         // Verify owner received funds
         uint256 finalOwnerBalance = IERC20(USDC).balanceOf(strategy.owner());
-        assertEq(
-            finalOwnerBalance,
-            initialOwnerBalance + amount,
-            "Owner should receive emergency funds"
-        );
+        assertEq(finalOwnerBalance, initialOwnerBalance + amount, "Owner should receive emergency funds");
     }
 
     function test_RevertIfWithoutDeposit() public {
@@ -241,14 +217,8 @@ contract DeltaNeutralStrategyTest is Test {
         vm.stopPrank();
 
         // Get position details
-        (
-            uint256 collateral,
-            uint256 borrowed,
-            uint256 hedge,
-            uint256 timestamp,
-            bool isOpen,
-            uint256 value
-        ) = strategy.getPositionDetails();
+        (uint256 collateral, uint256 borrowed, uint256 hedge, uint256 timestamp, bool isOpen, uint256 value) =
+            strategy.getPositionDetails();
 
         // Verify details
         assertEq(collateral, amount, "Collateral should match");
@@ -367,7 +337,7 @@ contract DeltaNeutralStrategyTest is Test {
         strategy.openPosition(amount);
 
         // Verify position is open
-        (, , , , bool isOpen, ) = strategy.getPositionDetails();
+        (,,,, bool isOpen,) = strategy.getPositionDetails();
         assertTrue(isOpen, "Position should be open after opening");
 
         // Step 2: Rebalance (skip for now as it requires complex logic)
@@ -378,7 +348,7 @@ contract DeltaNeutralStrategyTest is Test {
         strategy.closePosition();
 
         // Verify position is closed
-        (, , , , isOpen, ) = strategy.getPositionDetails();
+        (,,,, isOpen,) = strategy.getPositionDetails();
         assertFalse(isOpen, "Position should be closed after closing");
 
         vm.stopPrank();
@@ -408,7 +378,7 @@ contract DeltaNeutralStrategyTest is Test {
         vm.stopPrank();
 
         // Verify only one position can be open at a time
-        (, , , , bool isOpen, ) = strategy.getPositionDetails();
+        (,,,, bool isOpen,) = strategy.getPositionDetails();
         assertTrue(isOpen, "Position should be open");
     }
 

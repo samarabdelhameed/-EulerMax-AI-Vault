@@ -259,9 +259,11 @@ contract RiskOracle is Ownable {
     ) internal view returns (uint256) {
         (
             ,
-            /* uint80 roundID */ int256 price,
+            /* uint80 roundID */
+            int256 price,
             ,
-            /*uint startedAt*/ uint256 updatedAt /*uint80 answeredInRound*/,
+            /*uint startedAt*/
+            uint256 updatedAt /*uint80 answeredInRound*/,
 
         ) = feed.latestRoundData();
 

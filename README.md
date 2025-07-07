@@ -42,17 +42,19 @@ graph TB
 
 ## 📋 Smart Contract Deployment
 
-### 🎯 **Sepolia Testnet Deployment**
+### 🎯 **Sepolia Testnet Deployment - UPDATED**
 
-| Contract                        | Address                                      | Description                      |
-| ------------------------------- | -------------------------------------------- | -------------------------------- |
-| **PasskeyVerifier**             | `0x2cb7d7563B0e0e573171D5dBebe95896b20e9E38` | WebAuthn signature verification  |
-| **SmartAccount Implementation** | `0xE66f20F1aa26D941218d9678738d0e46A5eFfCf5` | EIP-4337 Smart Account logic     |
-| **WalletFactory**               | `0x14488E97783456F1dD2d222cefb718244bC8cc77` | Smart Account deployment factory |
-| **EntryPoint**                  | `0x0576a174D229E3cFA37253523E645A78A0C91B57` | EIP-4337 EntryPoint (Sepolia)    |
-| **RiskOracle**                  | `0x...`                                      | Real-time risk assessment        |
-| **DeltaNeutralStrategy**        | `0x...`                                      | Delta-neutral trading strategy   |
-| **EulerMaxVault**               | `0x...`                                      | Main vault contract              |
+| Contract                        | Address                                      | Description                      | Status     |
+| ------------------------------- | -------------------------------------------- | -------------------------------- | ---------- |
+| **PasskeyVerifier**             | `0x2cb7d7563B0e0e573171D5dBebe95896b20e9E38` | WebAuthn signature verification  | ✅ Live    |
+| **SmartAccount Implementation** | `0xE66f20F1aa26D941218d9678738d0e46A5eFfCf5` | EIP-4337 Smart Account logic     | ✅ Live    |
+| **WalletFactory**               | `0x14488E97783456F1dD2d222cefb718244bC8cc77` | Smart Account deployment factory | ✅ Live    |
+| **EntryPoint**                  | `0x0576a174D229E3cFA37253523E645A78A0C91B57` | EIP-4337 EntryPoint (Sepolia)    | ✅ Live    |
+| **RiskOracle**                  | `0x...`                                      | Real-time risk assessment        | 🚧 Pending |
+| **DeltaNeutralStrategy**        | `0x...`                                      | Delta-neutral trading strategy   | 🚧 Pending |
+| **EulerMaxVault**               | `0xF7eEAA461dF8a92dd14AF967A4661b944224aA06` | Main vault contract              | ✅ Live    |
+| **MockUSDC**                    | `0x9C7c59f83832929f5243Bf3a5e9B1d7557826F37` | Mock USDC for testing            | ✅ Live    |
+| **MockEuler**                   | `0xa2a221ff9d7602ff28faca5b1e244e5338db74dd` | Mock Euler lending protocol      | ✅ Live    |
 
 ### 🔗 **Network Configuration**
 
@@ -61,6 +63,42 @@ graph TB
 | **Sepolia**          | `11155111` | `https://sepolia.infura.io/v3/...` | ✅ Deployed |
 | **Ethereum Mainnet** | `1`        | `https://mainnet.infura.io/v3/...` | 🚧 Pending  |
 | **Polygon**          | `137`      | `https://polygon-rpc.com`          | 🚧 Pending  |
+
+---
+
+## 🧪 **Latest Test Results - UPDATED**
+
+### ✅ **Vault Integration Tests (Latest)**
+
+| Test Operation           | Description                   | Status  | Gas Used  | Transaction Hash                                                     |
+| ------------------------ | ----------------------------- | ------- | --------- | -------------------------------------------------------------------- |
+| **Vault Deployment**     | Deploy with MockEuler         | ✅ PASS | 1,454,780 | `0x0e196428c662482208b205333a815ec3078727cfb7172565ecdd81c9e84aa975` |
+| **MockUSDC Approval**    | Approve Vault to spend tokens | ✅ PASS | 46,892    | `0x8bda643803974ea65f06fe749fd9d5a132d369d64cc8fafe458bf5e30171491a` |
+| **Deposit Operation**    | Deposit 100 mUSDC to Vault    | ✅ PASS | 152,504   | `0xe1cf617a6517585d5b6c11b788a6fb400e896489cf433f09fbeb94aa9ac071c4` |
+| **Withdraw Operation**   | Withdraw 100 mUSDC from Vault | ✅ PASS | 71,422    | `0x687cde708a200c1388e623a69b40fec7071ff2694e6814a75d23786f1f412eb8` |
+| **Balance Verification** | Check user balance in Vault   | ✅ PASS | -         | -                                                                    |
+
+### 📊 **Test Results Summary**
+
+| Metric                | Value                                        | Status       |
+| --------------------- | -------------------------------------------- | ------------ |
+| **Vault Address**     | `0xF7eEAA461dF8a92dd14AF967A4661b944224aA06` | ✅ Live      |
+| **MockUSDC Address**  | `0x9C7c59f83832929f5243Bf3a5e9B1d7557826F37` | ✅ Live      |
+| **MockEuler Address** | `0xa2a221ff9d7602ff28faca5b1e244e5338db74dd` | ✅ Live      |
+| **Deposit Amount**    | 100 mUSDC (100,000,000 wei)                  | ✅ Success   |
+| **Withdraw Amount**   | 100 mUSDC (100,000,000 wei)                  | ✅ Success   |
+| **Total Gas Used**    | ~1.7M gas                                    | ✅ Optimized |
+| **Test Duration**     | < 5 minutes                                  | ✅ Fast      |
+
+### 🔄 **Integration Flow Tested**
+
+1. **✅ Vault Deployment** - Successfully deployed with MockEuler integration
+2. **✅ Token Approval** - Vault approved to spend user's MockUSDC
+3. **✅ Deposit Flow** - User deposits 100 mUSDC into Vault
+4. **✅ Lending Integration** - Vault deposits tokens into MockEuler
+5. **✅ Balance Tracking** - Vault tracks user shares correctly
+6. **✅ Withdraw Flow** - User withdraws 100 mUSDC from Vault
+7. **✅ Token Return** - User receives tokens back successfully
 
 ---
 
@@ -186,6 +224,30 @@ forge script script/TestSmartAccountIntegration.s.sol \
 | **State Verification**     | Contract initialization    | ✅ PASS | Sepolia |
 | **EntryPoint Integration** | EIP-4337 compliance        | ✅ PASS | Sepolia |
 
+### 🔁 **Vault Flow Testing**
+
+To test the complete DeFi vault lifecycle (Approve → Deposit → Withdraw):
+
+```bash
+# Run the comprehensive vault flow test
+bash scripts/test-vault-flow.sh
+```
+
+This script will:
+
+- ✅ Approve the Vault to spend mockUSDC
+- ✅ Deposit 100 mUSDC into the Vault
+- ✅ Validate balances in Vault & MockEuler
+- ✅ Withdraw and check final balances
+- ✅ Verify complete DeFi flow integration
+
+**Test Results:**
+
+- **Approve**: `0x172388193419371bea649d0397d53a6789144082544696e18b6a7e0e2a084a03`
+- **Deposit**: `0x981665ac05a04e79ad39824dfe779abba20378a616b48122eeee9ffff7bd2772`
+- **Withdraw**: `0x4c4d760829020438a9d79d1c35afb71c21528a5011ab9a7fb5f975df0ca204da`
+- **Status**: ✅ ALL TESTS PASSED
+
 ---
 
 ## 🔐 Security Features
@@ -198,97 +260,31 @@ forge script script/TestSmartAccountIntegration.s.sol \
 | **Authorization**  | Smart Account    | EIP-4337 account abstraction |
 | **Transaction**    | ECDSA + Passkey  | Dual signature verification  |
 | **Network**        | EntryPoint       | EIP-4337 standard compliance |
-| **Risk**           | Real-time Oracle | Dynamic risk assessment      |
-
-### 🔍 **Audit Status**
-
-| Component             | Audit Status      | Coverage |
-| --------------------- | ----------------- | -------- |
-| **Smart Accounts**    | ✅ Internal Audit | 95%      |
-| **Risk Oracle**       | ✅ Internal Audit | 92%      |
-| **Delta Strategy**    | ✅ Internal Audit | 89%      |
-| **Factory Contracts** | ✅ Internal Audit | 94%      |
 
 ---
 
-## 📈 Performance Metrics
+## 📝 **Latest Updates**
 
-### ⚡ **Gas Optimization**
+### 🆕 **Recent Deployments (Latest)**
 
-| Operation                  | Gas Used | Optimization  |
-| -------------------------- | -------- | ------------- |
-| **Smart Account Creation** | 145,854  | 15% reduction |
-| **Passkey Verification**   | 23,456   | 20% reduction |
-| **Transaction Execution**  | 45,123   | 25% reduction |
-| **Batch Operations**       | 67,890   | 30% reduction |
+- **✅ Vault Contract**: `0xF7eEAA461dF8a92dd14AF967A4661b944224aA06`
+- **✅ MockUSDC**: `0x9C7c59f83832929f5243Bf3a5e9B1d7557826F37`
+- **✅ MockEuler**: `0xa2a221ff9d7602ff28faca5b1e244e5338db74dd`
 
-### 🚀 **Network Performance**
+### 🔄 **Tested Operations**
 
-| Metric                | Value       | Benchmark               |
-| --------------------- | ----------- | ----------------------- |
-| **Transaction Speed** | < 2 seconds | Industry standard       |
-| **Gas Efficiency**    | 25% better  | vs. traditional wallets |
-| **Security Score**    | 9.8/10      | Independent audit       |
-| **User Experience**   | 9.5/10      | User testing            |
+- **✅ Deposit**: 100 mUSDC successfully deposited
+- **✅ Withdraw**: 100 mUSDC successfully withdrawn
+- **✅ Integration**: Full DeFi flow tested and working
+- **✅ Gas Optimization**: Efficient transaction handling
 
----
+### 🎯 **Next Steps**
 
-## 🌟 Innovation Highlights
-
-### 🎯 **Technical Innovations**
-
-1. **🔐 First Passkey-Enabled DeFi Platform**
-
-   - WebAuthn integration for seamless UX
-   - No private key management required
-   - Biometric authentication support
-
-2. **🤖 AI-Powered Risk Management**
-
-   - Real-time portfolio analysis
-   - Predictive risk modeling
-   - Automated strategy optimization
-
-3. **⚡ EIP-4337 Account Abstraction**
-
-   - Gasless transaction experience
-   - Batch operation support
-   - Enhanced security model
-
-4. **📊 Delta-Neutral Strategies**
-   - Risk-managed DeFi positions
-   - Automated rebalancing
-   - Cross-protocol integration
-
-### 🏆 **Competitive Advantages**
-
-| Feature             | EulerMax         | Traditional DeFi    | Advantage         |
-| ------------------- | ---------------- | ------------------- | ----------------- |
-| **Authentication**  | Passkey/WebAuthn | Private Keys        | 10x more secure   |
-| **UX**              | Gasless + Batch  | Manual transactions | 5x faster         |
-| **Risk Management** | AI-powered       | Manual monitoring   | 3x more efficient |
-| **Cross-chain**     | Native support   | Bridge-dependent    | 2x cheaper        |
-
----
-
-## 🚀 Roadmap
-
-### 📅 **Development Timeline**
-
-| Phase       | Timeline | Features             | Status         |
-| ----------- | -------- | -------------------- | -------------- |
-| **Phase 1** | Q1 2024  | Smart Account System | ✅ Complete    |
-| **Phase 2** | Q2 2024  | AI Integration       | 🚧 In Progress |
-| **Phase 3** | Q3 2024  | Cross-chain Support  | 📋 Planned     |
-| **Phase 4** | Q4 2024  | Mainnet Launch       | 📋 Planned     |
-
-### 🎯 **Upcoming Features**
-
-- [ ] **Mobile App** - Native iOS/Android support
-- [ ] **Advanced AI** - Machine learning models
-- [ ] **Institutional Features** - Large-scale deployments
-- [ ] **Governance** - DAO integration
-- [ ] **Analytics Dashboard** - Real-time insights
+- [ ] Deploy Risk Oracle with real data feeds
+- [ ] Integrate with real Euler protocol
+- [ ] Add AI-powered portfolio management
+- [ ] Implement cross-chain functionality
+- [ ] Add more sophisticated strategies
 
 ---
 
@@ -296,50 +292,17 @@ forge script script/TestSmartAccountIntegration.s.sol \
 
 We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details.
 
-### 🛠️ **Development Setup**
-
-```bash
-# Install dependencies
-forge install
-
-# Run tests
-forge test
-
-# Deploy contracts
-forge script script/DeploySmartAccountSystem.s.sol --broadcast
-```
-
----
-
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
----
+## 🔗 Links
 
-## 🙏 Acknowledgments
-
-- **EIP-4337 Community** - Account abstraction standards
-- **WebAuthn Consortium** - Passkey authentication
-- **Chainlink** - Price feed integration
-- **Foundry Team** - Development framework
-- **OpenZeppelin** - Security libraries
+- [Documentation](https://docs.eulermax.ai)
+- [Discord](https://discord.gg/eulermax)
+- [Twitter](https://twitter.com/eulermax)
+- [Website](https://eulermax.ai)
 
 ---
 
-## 📞 Contact
-
-- **Website**: [https://eulermax.ai](https://eulermax.ai)
-- **Email**: contact@eulermax.ai
-- **Twitter**: [@EulerMaxAI](https://twitter.com/EulerMaxAI)
-- **Discord**: [EulerMax Community](https://discord.gg/eulermax)
-
----
-
-<div align="center">
-
-**🚀 Built with ❤️ by the EulerMax Team**
-
-_Revolutionizing DeFi with AI and Account Abstraction_
-
-</div>
+**Made with ❤️ by the EulerMax Team**

@@ -107,17 +107,26 @@ contract RiskOracleRealDataTest is Test {
 
         vm.warp(block.timestamp + 2 hours);
 
-        vm.expectEmit(true, true, true, true);
-        emit RiskUpdated(
-            block.timestamp,
-            0, // Will be actual price
-            0, // Will be actual price
-            0, // Will be actual volatility
-            0, // Will be actual correlation
-            false // Will be actual IL status
-        );
-
+        // Update and capture the event
+        vm.recordLogs();
         riskOracle.updateRisk();
+        Vm.Log[] memory logs = vm.getRecordedLogs();
+
+        // Verify that RiskUpdated event was emitted
+        assertGt(logs.length, 0);
+
+        // Parse the event data
+        bytes32 eventSignature = keccak256("RiskUpdated(uint256,uint256,uint256,uint256,uint256,bool)");
+        bool eventFound = false;
+
+        for (uint256 i = 0; i < logs.length; i++) {
+            if (logs[i].topics[0] == eventSignature) {
+                eventFound = true;
+                break;
+            }
+        }
+
+        assertTrue(eventFound, "RiskUpdated event should be emitted");
 
         vm.stopPrank();
     }
@@ -135,9 +144,10 @@ contract RiskOracleRealDataTest is Test {
         vm.startPrank(owner);
 
         // First update
+        vm.warp(block.timestamp + 2 hours);
         riskOracle.updateRisk();
 
-        // Try to update immediately
+        // Try to update immediately without waiting for interval
         vm.expectRevert(RiskOracle.UpdateTooFrequent.selector);
         riskOracle.updateRisk();
 
@@ -266,10 +276,7 @@ contract RiskOracleRealDataTest is Test {
         vm.startPrank(user);
 
         vm.expectRevert();
-        riskOracle.updateFeedAddresses(
-            makeAddr("newEthFeed"),
-            makeAddr("newUsdcFeed")
-        );
+        riskOracle.updateFeedAddresses(makeAddr("newEthFeed"), makeAddr("newUsdcFeed"));
 
         vm.stopPrank();
     }
@@ -347,8 +354,7 @@ contract RiskOracleRealDataTest is Test {
         vm.startPrank(owner);
 
         // Initial state
-        RiskOracle.RiskMetrics memory initialMetrics = riskOracle
-            .getLatestRiskData();
+        RiskOracle.RiskMetrics memory initialMetrics = riskOracle.getLatestRiskData();
         assertGt(initialMetrics.ethPrice, 0);
         assertGt(initialMetrics.usdcPrice, 0);
 
@@ -360,8 +366,7 @@ contract RiskOracleRealDataTest is Test {
         riskOracle.updateRisk();
 
         // Check updated state
-        RiskOracle.RiskMetrics memory updatedMetrics = riskOracle
-            .getLatestRiskData();
+        RiskOracle.RiskMetrics memory updatedMetrics = riskOracle.getLatestRiskData();
         assertGt(updatedMetrics.ethPrice, 0);
         assertGt(updatedMetrics.usdcPrice, 0);
         assertEq(updatedMetrics.lastUpdateTime, block.timestamp);
@@ -448,8 +453,7 @@ contract RiskOracleRealDataTest is Test {
         console.log("Testing real ETH/BTC correlation on Sepolia...");
 
         // Get initial prices
-        RiskOracle.RiskMetrics memory initialMetrics = riskOracle
-            .getLatestRiskData();
+        RiskOracle.RiskMetrics memory initialMetrics = riskOracle.getLatestRiskData();
         console.log("Initial ETH Price:", initialMetrics.ethPrice);
         console.log("Initial BTC Price:", initialMetrics.usdcPrice);
 
@@ -458,8 +462,7 @@ contract RiskOracleRealDataTest is Test {
             vm.warp(block.timestamp + 2 hours);
             riskOracle.updateRisk();
 
-            RiskOracle.RiskMetrics memory metrics = riskOracle
-                .getLatestRiskData();
+            RiskOracle.RiskMetrics memory metrics = riskOracle.getLatestRiskData();
             console.log("Update", i + 1, "ETH Price:", metrics.ethPrice);
             console.log("Update", i + 1, "BTC Price:", metrics.usdcPrice);
             console.log("Update", i + 1, "Correlation:", metrics.correlation);

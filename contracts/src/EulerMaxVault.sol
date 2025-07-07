@@ -4,10 +4,12 @@ pragma solidity ^0.8.30;
 import {IERC20} from "../lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import {Ownable} from "../lib/openzeppelin-contracts/contracts/access/Ownable.sol";
 import {IEulerLending} from "./interfaces/IEulerLending.sol";
+import {IEulerSwap} from "./interfaces/IEulerSwap.sol";
 
 contract EulerMaxVault is Ownable {
     IERC20 public immutable asset;
     IEulerLending public euler;
+    IEulerSwap public eulerSwap;
 
     uint256 public totalShares;
     mapping(address => uint256) public userShares;
@@ -26,6 +28,30 @@ contract EulerMaxVault is Ownable {
 
     function setEuler(address _euler) external onlyOwner {
         euler = IEulerLending(_euler);
+    }
+
+    function setEulerSwap(address _eulerSwap) external onlyOwner {
+        eulerSwap = IEulerSwap(_eulerSwap);
+    }
+
+    function quoteSwap(
+        address tokenIn,
+        address tokenOut,
+        uint256 amount,
+        bool exactIn
+    ) external view returns (uint256) {
+        require(address(eulerSwap) != address(0), "EulerSwap not set");
+        return eulerSwap.computeQuote(tokenIn, tokenOut, amount, exactIn);
+    }
+
+    function executeSwap(
+        uint256 amount0Out,
+        uint256 amount1Out,
+        address to,
+        bytes calldata data
+    ) external onlyOwner {
+        require(address(eulerSwap) != address(0), "EulerSwap not set");
+        eulerSwap.swap(amount0Out, amount1Out, to, data);
     }
 
     function deposit(uint256 amount) external {

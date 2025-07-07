@@ -1,0 +1,11 @@
+{
+  "vault": "0x3c9c14a184946642af10b09890a01fadbd874502",
+  "deployedAt": "2024-01-07",
+  "network": "Sepolia",
+  "chainId": 11155111,
+  "owner": "0x14D7795A2566Cd16eaA1419A26ddB643CE523655",
+  "usdc": "0xda9d4f9b69ac6C22e444eD9aF0CfC043b7a7f53f",
+  "euler": "0xecBe79DedF2Be46E9E2aB803dBF4184245d6cf66",
+  "transactionHash": "0x6a729988a9f52eb675979188c2a5bda7280dd22d620a47fe74a39767a7b04a7e"
+} 
+

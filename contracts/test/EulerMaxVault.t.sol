@@ -20,6 +20,7 @@ contract MockERC20 is IERC20 {
         address recipient,
         uint256 amount
     ) public override returns (bool) {
+        require(balanceOf[msg.sender] >= amount, "Insufficient balance");
         balanceOf[msg.sender] -= amount;
         balanceOf[recipient] += amount;
         return true;
@@ -38,6 +39,11 @@ contract MockERC20 is IERC20 {
         address recipient,
         uint256 amount
     ) public override returns (bool) {
+        require(balanceOf[sender] >= amount, "Insufficient balance");
+        require(
+            allowance[sender][msg.sender] >= amount,
+            "Insufficient allowance"
+        );
         allowance[sender][msg.sender] -= amount;
         balanceOf[sender] -= amount;
         balanceOf[recipient] += amount;
@@ -79,6 +85,9 @@ contract EulerMaxVaultTest is Test {
     MockERC20 token;
     MockEulerLending euler;
 
+    event Deposited(address indexed user, uint256 amount, uint256 shares);
+    event Withdrawn(address indexed user, uint256 amount, uint256 shares);
+
     address user = address(0x1);
 
     function setUp() public {
@@ -114,5 +123,103 @@ contract EulerMaxVaultTest is Test {
 
         assertEq(vault.vaultAPY(), 500);
         assertEq(vault.totalSupplied(), 100 ether);
+    }
+
+    function testSetEulerSwapSetsAddress() public {
+        address dummySwap = address(0xBEEF);
+        vault.setEulerSwap(dummySwap);
+        assertEq(
+            address(vault.eulerSwap()),
+            dummySwap,
+            "eulerSwap address not set correctly"
+        );
+    }
+
+    function testQuoteSwapRevertsIfNotSet() public {
+        address tokenIn = address(0x1);
+        address tokenOut = address(0x2);
+        uint256 amount = 1e18;
+        bool exactIn = true;
+        vm.expectRevert(bytes("EulerSwap not set"));
+        vault.quoteSwap(tokenIn, tokenOut, amount, exactIn);
+    }
+
+    function testExecuteSwapRevertsIfNotSet() public {
+        vm.expectRevert(bytes("EulerSwap not set"));
+        vault.executeSwap(0, 0, address(this), "");
+    }
+
+    function testQuoteAndExecuteSwapWithDummyAddress() public {
+        address dummySwap = address(0xBEEF);
+        vault.setEulerSwap(dummySwap);
+        // Should revert because dummy address has no computeQuote function
+        vm.expectRevert();
+        vault.quoteSwap(address(0x1), address(0x2), 1e18, true);
+        // Should revert because dummy address has no executeSwap function
+        vm.expectRevert();
+        vault.executeSwap(0, 0, address(this), "");
+    }
+
+    function testOnlyOwnerSetEulerSwap() public {
+        address dummySwap = address(0xBEEF);
+        address notOwner = address(0xBAD);
+        vm.startPrank(notOwner);
+        vm.expectRevert(); // Updated to use generic revert for OwnableUnauthorizedAccount
+        vault.setEulerSwap(dummySwap);
+        vm.stopPrank();
+    }
+
+    function testOnlyOwnerExecuteSwap() public {
+        address dummySwap = address(0xBEEF);
+        vault.setEulerSwap(dummySwap);
+        address notOwner = address(0xBAD);
+        vm.startPrank(notOwner);
+        vm.expectRevert(); // Updated to use generic revert for OwnableUnauthorizedAccount
+        vault.executeSwap(0, 0, address(this), "");
+        vm.stopPrank();
+    }
+
+    function testDepositZeroReverts() public {
+        vm.expectRevert();
+        vault.deposit(0);
+    }
+
+    function testWithdrawMoreThanBalanceReverts() public {
+        address testUser = address(0x123);
+        // Mint tokens for testUser
+        token.mint(testUser, 10 ether);
+        vm.startPrank(testUser);
+        token.approve(address(vault), 10 ether);
+        vault.deposit(1e18);
+        vm.expectRevert();
+        vault.withdraw(2e18);
+        vm.stopPrank();
+    }
+
+    function testDepositEmitsEvent() public {
+        uint256 amount = 1e18;
+        address testUser = address(0x123);
+        // Mint tokens for testUser
+        token.mint(testUser, 10 ether);
+        vm.startPrank(testUser);
+        token.approve(address(vault), 10 ether);
+        vm.expectEmit(true, true, false, true);
+        emit Deposited(testUser, amount, amount); // assuming shares = amount for test simplicity
+        vault.deposit(amount);
+        vm.stopPrank();
+    }
+
+    function testWithdrawEmitsEvent() public {
+        uint256 amount = 1e18;
+        address testUser = address(0x123);
+        // Mint tokens for testUser
+        token.mint(testUser, 10 ether);
+        vm.startPrank(testUser);
+        token.approve(address(vault), 10 ether);
+        vault.deposit(amount);
+        vm.expectEmit(true, true, false, true);
+        emit Withdrawn(testUser, amount, amount); // assuming shares = amount for test simplicity
+        vault.withdraw(amount);
+        vm.stopPrank();
     }
 }

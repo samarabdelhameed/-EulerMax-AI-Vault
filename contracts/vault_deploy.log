@@ -1,0 +1,37 @@
+Compiling 1 files with Solc 0.8.30
+Solc 0.8.30 finished in 618.34ms
+Compiler run successful!
+Script ran successfully.
+
+== Logs ==
+  [INFO] Using MOCK_EULER: 0xecBe79DedF2Be46E9E2aB803dBF4184245d6cf66
+  Starting deployment...
+  USDC Address: 0x9C7c59f83832929f5243Bf3a5e9B1d7557826F37
+  EULER Address: 0xecBe79DedF2Be46E9E2aB803dBF4184245d6cf66
+  Owner Address: 0x14D7795A2566Cd16eaA1419A26ddB643CE523655
+  Deployed EulerMaxVault at: 0xC7d1d04032992f8B3947a868047e46604402c775
+  Deployment completed successfully!
+
+## Setting up 1 EVM.
+
+==========================
+
+Chain 11155111
+
+Estimated gas price: 0.002794385 gwei
+
+Estimated total gas used for script: 1891214
+
+Estimated amount required: 0.00000528478003339 ETH
+
+==========================
+
+
+==========================
+
+ONCHAIN EXECUTION COMPLETE & SUCCESSFUL.
+
+Transactions saved to: /Users/s/ming-template/encodeclub /-EulerMax-AI-Vault/contracts/broadcast/DeployEulerMaxVault.s.sol/11155111/run-latest.json
+
+Sensitive values saved to: /Users/s/ming-template/encodeclub /-EulerMax-AI-Vault/contracts/cache/DeployEulerMaxVault.s.sol/11155111/run-latest.json
+
