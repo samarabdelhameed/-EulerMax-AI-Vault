@@ -1,0 +1,194 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  body {
+    @apply transition-colors duration-300 bg-gray-900 text-white;
+  }
+}
+
+@layer components {
+  .dark {
+    color-scheme: dark;
+  }
+  
+  .glass-effect {
+    @apply bg-gray-800/80 backdrop-blur-md border border-gray-700/50;
+  }
+  
+  .gradient-text {
+    @apply bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent;
+  }
+  
+  .card-hover {
+    @apply transition-all duration-300 hover:shadow-xl hover:-translate-y-1 hover:shadow-blue-500/20;
+  }
+  
+  .btn-primary {
+    @apply bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all transform hover:scale-105 shadow-lg;
+  }
+  
+  .btn-secondary {
+    @apply bg-gray-800 text-gray-200 border-2 border-gray-700 px-6 py-3 rounded-lg hover:bg-gray-700 hover:border-gray-600 transition-all transform hover:scale-105 shadow-md;
+  }
+  
+  .card-dark {
+    @apply bg-gray-800/90 border border-gray-700/50 backdrop-blur-sm;
+  }
+  
+  .input-dark {
+    @apply bg-gray-800/80 border border-gray-700 text-white placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500/20;
+  }
+}
+
+/* Dark theme base styles */
+body {
+  @apply bg-gray-900 text-white;
+}
+
+/* Dark theme overrides */
+.dark .bg-white {
+  @apply bg-gray-800/90;
+}
+
+.dark .text-gray-900 {
+  @apply text-white;
+}
+
+.dark .text-gray-600 {
+  @apply text-gray-300;
+}
+
+.dark .text-gray-700 {
+  @apply text-gray-200;
+}
+
+.dark .border-gray-200 {
+  @apply border-gray-700/50;
+}
+
+.dark .bg-gray-50 {
+  @apply bg-gray-800/60;
+}
+
+.dark .bg-gray-100 {
+  @apply bg-gray-700/60;
+}
+
+.dark .hover\:bg-gray-50:hover {
+  @apply hover:bg-gray-700/60;
+}
+
+.dark .hover\:bg-gray-100:hover {
+  @apply hover:bg-gray-600/60;
+}
+
+/* Fix button and input colors */
+.dark input,
+.dark select,
+.dark button {
+  @apply text-white;
+}
+
+.dark input::placeholder {
+  @apply text-gray-400;
+}
+
+/* Ensure proper contrast for buttons */
+.dark .bg-white {
+  @apply bg-gray-800 text-white;
+}
+
+.dark .border-gray-300 {
+  @apply border-gray-600;
+}
+
+.dark .hover\:bg-gray-200:hover {
+  @apply hover:bg-gray-700;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-gray-800;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-600 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-500;
+}
+
+/* Loading animations */
+@keyframes pulse-slow {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Glow effects */
+.glow-blue {
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+}
+
+.glow-purple {
+  box-shadow: 0 0 20px rgba(147, 51, 234, 0.3);
+}
+
+.glow-green {
+  box-shadow: 0 0 20px rgba(34, 197, 94, 0.3);
+}
+
+/* Responsive utilities */
+@media (max-width: 640px) {
+  .mobile-padding {
+    @apply px-4;
+  }
+  
+  .mobile-text {
+    @apply text-sm;
+  }
+}
+
+/* Chart container styling */
+.recharts-wrapper {
+  @apply bg-transparent;
+}
+
+.recharts-cartesian-grid line {
+  @apply stroke-gray-700;
+}
+
+.recharts-text {
+  @apply fill-gray-300;
+}
+
+/* Custom gradient backgrounds */
+.gradient-bg-1 {
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+}
+
+.gradient-bg-2 {
+  background: linear-gradient(135deg, #374151 0%, #1f2937 100%);
+}
+
+.gradient-bg-3 {
+  background: linear-gradient(135deg, #4b5563 0%, #374151 100%);
+}
