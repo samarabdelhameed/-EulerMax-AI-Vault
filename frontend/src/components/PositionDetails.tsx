@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, TrendingUp, TrendingDown, AlertTriangle, RefreshCw, ExternalLink, Calendar, DollarSign, Percent, Activity } from 'lucide-react';
+import { X, TrendingUp, AlertTriangle, RefreshCw, ExternalLink, Calendar, DollarSign, Percent, Activity } from 'lucide-react';
 import { motion } from 'framer-motion';
 import PortfolioChart from './Charts/PortfolioChart';
 
@@ -10,8 +10,8 @@ interface PositionDetailsProps {
     value: number;
     apy: number;
     risk: string;
-    entryDate: Date;
-    lastRebalance: Date;
+    entryDate: string; // ISO date string
+    lastRebalance: string; // ISO date string
     impermanentLoss: number;
     fees: number;
     volume24h: number;
@@ -101,7 +101,7 @@ const PositionDetails: React.FC<PositionDetailsProps> = ({
           ].map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
+              onClick={() => setActiveTab(tab.id as 'overview' | 'performance' | 'history')}
               className={`px-6 py-3 font-medium transition-colors ${
                 activeTab === tab.id
                   ? 'text-blue-600 border-b-2 border-blue-600'
@@ -162,14 +162,14 @@ const PositionDetails: React.FC<PositionDetailsProps> = ({
                       <span className="text-gray-600">Entry Date:</span>
                       <span className="font-medium flex items-center space-x-1">
                         <Calendar className="w-3 h-3" />
-                        <span>{position.entryDate.toLocaleDateString()}</span>
+                        <span>{new Date(position.entryDate).toLocaleDateString()}</span>
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Last Rebalance:</span>
                       <span className="font-medium flex items-center space-x-1">
                         <RefreshCw className="w-3 h-3" />
-                        <span>{position.lastRebalance.toLocaleDateString()}</span>
+                        <span>{new Date(position.lastRebalance).toLocaleDateString()}</span>
                       </span>
                     </div>
                     <div className="flex justify-between">
